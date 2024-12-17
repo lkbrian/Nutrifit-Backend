@@ -49,6 +49,7 @@ jwt = JWTManager()
 jwt.init_app(app)
 
 api = Api(app)
+scheduler = BackgroundScheduler()
 migrate = Migrate(app, db)
 CORS(app)
 

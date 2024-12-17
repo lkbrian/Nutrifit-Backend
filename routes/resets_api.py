@@ -12,14 +12,14 @@ from flask_mail import Message
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash
 import random
-from models import ResetToken,User
+from models import Tokens,User
 
 load_dotenv()
 def get_unique_reset_token(self):
         """Generates a unique 5-digit reset token."""
         while True:
             reset_token = str(random.randint(10000, 99999))
-            token_exists = ResetToken.query.filter_by(token=reset_token).first()
+            token_exists = Tokens.query.filter_by(token=reset_token).first()
             if not token_exists:
                 return reset_token
 
@@ -38,7 +38,7 @@ class Forgot_password(Resource):
 
         # Generate reset token
         reset_token = secrets.token_urlsafe(16)
-        reset_token_entry = ResetToken(
+        reset_token_entry = Tokens(
             token=reset_token,
             expires_at=datetime.utcnow()
             + timedelta(hours=1),  # Token expires in 1 hour
@@ -104,6 +104,7 @@ class Forgot_password(Resource):
                 ),
                 500,
             )
+
 class Reset_password(Resource):
     def post(self):
         data = request.json
@@ -120,7 +121,7 @@ class Reset_password(Resource):
             return make_response(jsonify({"msg": "Passwords do not match"}), 400)
 
         # Find the reset token entry
-        reset_token_entry = ResetToken.query.filter_by(token=token).first()
+        reset_token_entry = Tokens.query.filter_by(token=token).first()
 
         if not reset_token_entry:
             return make_response(jsonify({"msg": "Invalid or expired token"}), 400)
@@ -176,8 +177,8 @@ class Change_email(Resource):
         
         reset_token = self.get_unique_reset_token()
 
-        # Create a ResetToken entry with a 1-hour expiry
-        reset_token_entry = ResetToken(
+        # Create a Tokens entry with a 1-hour expiry
+        reset_token_entry = Tokens(
             token=reset_token, expires_at=datetime.utcnow() + timedelta(hours=1)
         )
 
@@ -246,7 +247,7 @@ class Verify_token(Resource):
         if not token:
             return make_response(jsonify({"msg": "Token is required"}), 400)
 
-        reset_token_entry = ResetToken.query.filter_by(token=token).first()
+        reset_token_entry = Tokens.query.filter_by(token=token).first()
 
         if not reset_token_entry:
             return make_response(jsonify({"msg": "Invalid token"}), 400)
@@ -315,7 +316,7 @@ class Verify_email(Resource):
         if not token:
             return make_response(jsonify({"msg": "Token is required"}), 400)
 
-        reset_token_entry = ResetToken.query.filter_by(token=token).first()
+        reset_token_entry = Tokens.query.filter_by(token=token).first()
 
         if not reset_token_entry:
             return make_response(jsonify({"msg": "Invalid token"}), 400)

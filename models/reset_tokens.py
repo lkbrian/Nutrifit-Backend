@@ -1,12 +1,13 @@
 from config import db
 from datetime import datetime,timedelta,timezone
 
-class ResetToken(db.Model):
-    __tablename__='resetokens'
+class Tokens(db.Model):
+    __tablename__='TBL_TOKENS'
     token_id= db.Column(db.Integer,primary_key=True)
+    request_type = db.Column(db.String, nullable=True)
     token = db.Column(db.String, nullable=False, unique=True)
     expires_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc) + timedelta(hours=1))
-    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("TBL_APP_USERS.user_id"), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, onupdate=datetime.now(timezone.utc))
     
