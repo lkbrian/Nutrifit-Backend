@@ -36,7 +36,6 @@ class Login(Resource):
                 "email": user.email,
                 "id": user.user_id,
             },
-            additional_claims={"role": user.role},
         )
 
           response = {
@@ -46,7 +45,7 @@ class Login(Resource):
           }
           return response
         else:
-          return make_response(jsonify({'msg':"Invalid user credentials"}),401)
+          return make_response(jsonify({'msg':"Invalid credentials"}),401)
 
 
 class Logout(Resource):
@@ -95,7 +94,7 @@ class CreateAccount(Resource):
         db.session.commit()
 
         # Send verification email
-        verification_link = f"{os.getenv('ACCOUNT_VERIFICATION_LINK')}?token={verification_token}"
+        verification_link = f"{os.getenv('LOCAL_DEV_VERIFICATION_LINK')}?token={verification_token}"
         expiration_time = "1 hour"
         
         html_body = f"""

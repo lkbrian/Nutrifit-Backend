@@ -51,6 +51,6 @@ jwt.init_app(app)
 api = Api(app)
 scheduler = BackgroundScheduler()
 migrate = Migrate(app, db)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 mail = Mail(app)

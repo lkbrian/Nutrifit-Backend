@@ -1,6 +1,6 @@
 # import email
 import os
-import secrets
+# import secrets
 from datetime import datetime, timedelta, timezone
 from sqlite3 import IntegrityError
 from venv import logger
@@ -27,62 +27,56 @@ class Forgot_password(Resource):
     def post(self):
         data = request.json
         email = data.get("email")
+        print(data)
 
         if not email:
             return make_response(jsonify({"error": "Email is required"}), 400)
 
         user = User.query.filter_by(email=email).first()
         if not user:
-          return make_response(jsonify({'msg':"user doesn't exist"}),404)
+            return make_response(jsonify({'msg':"user doesn't exist"}),404)
        
-
-        # Generate reset token
-        reset_token = secrets.token_urlsafe(16)
+        reset_token = self.get_unique_reset_token()
+        print(reset_token)
+        # Create a Tokens entry with a 1-hour expiry
         reset_token_entry = Tokens(
-            token=reset_token,
-            expires_at=datetime.utcnow()
-            + timedelta(hours=1),  # Token expires in 1 hour
+            token=reset_token,request_type='Forgot Password', expires_at=datetime.utcnow() + timedelta(hours=1)
         )
 
-        # Associate reset token with the entity
         reset_token_entry.user_id = user.user_id
-      
 
+        # Save token to the database
         db.session.add(reset_token_entry)
         db.session.commit()
+
         try:
-            reset_link = f"http://localhost:4000/reset_password?token={reset_token}"
+
             expiration_time = "1 hour"
 
             html_body = f"""
-            <div
-              style="width: 100%;background: #ebf2fa;padding: 20px 0 0 0;font-family: system-ui, sans-serif; text-align: center;">
-              <div
-              style="border-top: 6px solid #c5e46c; background-color: #fff; display: block; padding:  8px 20px; text-align: center;   max-width: 500px;  border-bottom-left-radius: .4rem; border-bottom-right-radius: .4rem; letter-spacing: .037rem; line-height: 26px;  margin: auto; font-size: 14px; ">
-              <div style="text-align: left; padding-top: 10px;">
-                  <p>We've received a request to reset the password for the Nutrifit account associated with {user.email}.
-                  Please note that no changes have been made to your account yet. We recommend resetting your password
-                  immediately, to ensure the security of your account.</p>
-                  <p>Click the button below to reset your password:</p>
-              </div>
-              <!-- Button -->
-              <a href='{reset_link}'
-                  style='display: inline-block;width:90%; padding: 8px 20px;  color: #111; linear-gradient(135deg, rgba(197,228,108,1) 25%, rgba(79,164,58,1) 100%); text-decoration: none; border-radius: .4rem;'>
-                  Reset Password
-              </a>
-              <!-- Additional Information -->
-              <div style="text-align: center; padding-top: 2px;">
-                  <p>This link will expire in <strong>{expiration_time}</strong>.</p>
-              </div>
-              </div>
-              <p style="padding: 20px 0 5px 0; text-align: center;color: rgb(150, 150, 150);font-size: 12px;">Nutrifit 
-              Community
-              </p>
-          </div>"""
+                    <div
+                    style="width: 100%;background: #ebf2fa;padding: 20px 0 0 0;font-family: system-ui, sans-serif; text-align: center;">
+                    <div
+                    style="border-top: 6px solid #c5e46c; background-color: #fff; display: block; padding:  8px 20px; text-align: center;   max-width: 500px;  border-bottom-left-radius: .4rem; border-bottom-right-radius: .4rem; letter-spacing: .037rem; line-height: 26px;  margin: auto; font-size: 14px; ">
+                    <div style="text-align: left; padding-top: 10px;">
+                        <p style="text-align: center;">You have requested to change your email address, to confirm the change,use this code 
+                        </p>
+                    </div>
+                        <h1>{reset_token}</h1>
+
+                    <!-- Additional Information -->
+                    <div style="text-align: center; padding-top: 2px;">
+                        <p>Code  expires in <strong>{expiration_time}</strong>.</p>
+                    </div>
+                    </div>
+                    <p style="padding: 20px 0 5px 0; text-align: center;color: rgb(150, 150, 150);font-size: 12px;">Nutrifit
+                    Community
+                    </p>
+                    </div>"""
 
             # Create message
             msg = Message(
-                subject="Reset Your Password",
+                subject="Nutrifit Otp",
                 sender=os.getenv("MAIL_USERNAME"),
                 recipients=[user.email],
                 html=html_body,
@@ -91,7 +85,7 @@ class Forgot_password(Resource):
             mail.send(msg)
 
             return make_response(
-                jsonify({"message": "Password reset link sent to your email"}), 200
+                jsonify({"msg": " verification code sent to your old email"}), 201
             )
         except Exception as e:
             logger.error(f"Error sending password reset email: {e}")
@@ -103,7 +97,76 @@ class Forgot_password(Resource):
                     }
                 ),
                 500,
-            )
+            )        
+     
+        # Generate reset token
+        # reset_token = secrets.token_urlsafe(16)
+        # reset_token_entry = Tokens(
+        #     token=reset_token,
+        #     expires_at=datetime.utcnow()
+        #     + timedelta(hours=1),  # Token expires in 1 hour
+        # )
+
+        # # Associate reset token with the entity
+        # reset_token_entry.user_id = user.user_id
+      
+
+        # db.session.add(reset_token_entry)
+        # db.session.commit()
+        # try:
+        #     reset_link = f"http://localhost:4000/reset_password?token={reset_token}"
+        #     expiration_time = "1 hour"
+
+        #     html_body = f"""
+        #     <div
+        #       style="width: 100%;background: #ebf2fa;padding: 20px 0 0 0;font-family: system-ui, sans-serif; text-align: center;">
+        #       <div
+        #       style="border-top: 6px solid #c5e46c; background-color: #fff; display: block; padding:  8px 20px; text-align: center;   max-width: 500px;  border-bottom-left-radius: .4rem; border-bottom-right-radius: .4rem; letter-spacing: .037rem; line-height: 26px;  margin: auto; font-size: 14px; ">
+        #       <div style="text-align: left; padding-top: 10px;">
+        #           <p>We've received a request to reset the password for the Nutrifit account associated with {user.email}.
+        #           Please note that no changes have been made to your account yet. We recommend resetting your password
+        #           immediately, to ensure the security of your account.</p>
+        #           <p>Click the button below to reset your password:</p>
+        #       </div>
+        #       <!-- Button -->
+        #       <a href='{reset_link}'
+        #           style='display: inline-block;width:90%; padding: 8px 20px;  color: #111; linear-gradient(135deg, rgba(197,228,108,1) 25%, rgba(79,164,58,1) 100%); text-decoration: none; border-radius: .4rem;'>
+        #           Reset Password
+        #       </a>
+        #       <!-- Additional Information -->
+        #       <div style="text-align: center; padding-top: 2px;">
+        #           <p>This link will expire in <strong>{expiration_time}</strong>.</p>
+        #       </div>
+        #       </div>
+        #       <p style="padding: 20px 0 5px 0; text-align: center;color: rgb(150, 150, 150);font-size: 12px;">Nutrifit 
+        #       Community
+        #       </p>
+        #   </div>"""
+
+        #     # Create message
+        #     msg = Message(
+        #         subject="Reset Your Password",
+        #         sender=os.getenv("MAIL_USERNAME"),
+        #         recipients=[user.email],
+        #         html=html_body,
+        #     )
+
+        #     mail.send(msg)
+
+        #     return make_response(
+        #         jsonify({"message": "Password reset link sent to your email"}), 200
+        #     )
+        # except Exception as e:
+        #     logger.error(f"Error sending password reset email: {e}")
+        #     db.session.rollback()
+        #     return make_response(
+        #         jsonify(
+        #             {
+        #                 "error": "An error occurred while sending the email. Please try again later."
+        #             }
+        #         ),
+        #         500,
+        #     )
 
 class Reset_password(Resource):
     def post(self):
@@ -182,7 +245,7 @@ class Change_email(Resource):
             token=reset_token, expires_at=datetime.utcnow() + timedelta(hours=1)
         )
 
-        reset_token_entry.user_id_id = user.user_id
+        reset_token_entry.user_id = user.user_id
 
         # Save token to the database
         db.session.add(reset_token_entry)
@@ -215,7 +278,7 @@ class Change_email(Resource):
 
             # Create message
             msg = Message(
-                subject="Nitrifit Otp",
+                subject="Nutrifit Otp",
                 sender=os.getenv("MAIL_USERNAME"),
                 recipients=[user.email],
                 html=html_body,

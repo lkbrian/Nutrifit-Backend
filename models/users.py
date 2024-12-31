@@ -47,6 +47,7 @@ class User(db.Model,SerializerMixin):
   updated_at = db.Column(db.DateTime, onupdate=datetime.now())
 
   reset_tokens = db.relationship("Tokens", back_populates="user")
+  user_info = db.relationship("UserInfo", back_populates="user")
   # messages = db.relationship("Message", back_populates="user")
 
   def set_password(self, password):

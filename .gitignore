@@ -6,3 +6,4 @@ Server\.venv
 
 .idea
 instance/nutrifit.sqlite
+# routes/__pycache__
